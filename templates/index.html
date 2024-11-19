@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Artists</title>
+    
+    <link rel="stylesheet" href="/static/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Faculty+Glyphic&display=swap" rel="stylesheet">
+    
+</head>
+
+<body>
+    <h1>Groupie-Tracker</h1>
+
+    <!-- Search Bar Section -->
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Search for a band..." oninput="filterArtists()">
+    </div>
+
+    <!-- List of Artists -->
+    <ul id="artistList">
+        {{range .}}
+            <li>
+                <a href="/artists/{{.ID}}">
+                    <img src="{{.Image}}" alt="{{.Name}}" style="width:200px;height:200px;">
+                </a>
+                <p>{{.Name}}</p>
+            </li>
+        {{end}}
+    </ul>
+
+    <script>
+        // Function to filter the artist list based on the search query
+        function filterArtists() {
+            const searchQuery = document.getElementById("searchInput").value.toLowerCase();
+            const artistList = document.getElementById("artistList");
+            const artists = artistList.getElementsByTagName("li");
+
+            for (let i = 0; i < artists.length; i++) {
+                const artistName = artists[i].getElementsByTagName("p")[0].innerText.toLowerCase();
+                if (artistName.indexOf(searchQuery) > -1) {
+                    artists[i].style.display = "";
+                } else {
+                    artists[i].style.display = "none";
+                }
+            }
+        }
+    </script>
+</body>
+</html>
