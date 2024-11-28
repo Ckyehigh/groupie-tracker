@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 // API represents the structure of the main API response
@@ -23,7 +24,10 @@ type Artist struct {
 	CreationDate int      `json:"creationDate"`
 	FirstAlbum   string   `json:"firstAlbum"`
 	Image        string   `json:"image"`
+	Locations    []string `json:"-"`
 }
+
+var artists []Artist
 
 // Location represents the structure of a location data
 type Location struct {
@@ -64,6 +68,43 @@ func FetchAPI() (*API, error) {
 	return &api, nil
 }
 
+// Search function to search for artists, locations, or members
+// Search function to search for artists, locations, or members
+func Search(data string) []map[string]string {
+	var results []map[string]string
+	_, err := strconv.Atoi(string(data[0]))
+	if err != nil {
+		// Search by artist name, location, or member
+		for _, artist := range artists {
+			if strings.Contains(strings.ToLower(artist.Name), strings.ToLower(data)) {
+				results = append(results, map[string]string{"type": "Band", "id": strconv.Itoa(artist.ID), "name": artist.Name})
+			}
+			locations, _ := FetchLocations("https://groupietrackers.herokuapp.com/api/locations", artist.ID)
+			for _, location := range locations {
+				if strings.Contains(strings.ToLower(location), strings.ToLower(data)) {
+					results = append(results, map[string]string{"type": "Show Location", "id": strconv.Itoa(artist.ID), "name": location + " - " + artist.Name})
+				}
+			}
+			for _, member := range artist.Members {
+				if strings.Contains(strings.ToLower(member), strings.ToLower(data)) {
+					results = append(results, map[string]string{"type": "Member", "id": strconv.Itoa(artist.ID), "name": member + " - " + artist.Name})
+				}
+			}
+		}
+	} else {
+		// Search by first album or creation date
+		for _, artist := range artists {
+			if strings.Contains(artist.FirstAlbum, data) {
+				results = append(results, map[string]string{"type": "First Album", "id": strconv.Itoa(artist.ID), "name": artist.FirstAlbum + " - " + artist.Name})
+			}
+			if strings.Contains(strconv.Itoa(artist.CreationDate), data) {
+				results = append(results, map[string]string{"type": "Creation Date", "id": strconv.Itoa(artist.ID), "name": strconv.Itoa(artist.CreationDate) + " - " + artist.Name})
+			}
+		}
+	}
+	return results
+}
+
 // FetchArtists fetches the list of artists
 func FetchArtists(url string) ([]Artist, error) {
 	resp, err := http.Get(url)
@@ -77,7 +118,6 @@ func FetchArtists(url string) ([]Artist, error) {
 		return nil, err
 	}
 
-	var artists []Artist
 	err = json.Unmarshal(body, &artists)
 	if err != nil {
 		return nil, err
@@ -146,6 +186,9 @@ func FetchDates(url string, id int) ([]string, error) {
 	err = json.Unmarshal(body, &datesData)
 	if err != nil {
 		return nil, err
+	}
+	for i, day := range datesData.Dates {
+		datesData.Dates[i] = strings.TrimLeft(day, "*")
 	}
 
 	return datesData.Dates, nil

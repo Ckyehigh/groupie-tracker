@@ -9,7 +9,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Faculty+Glyphic&display=swap" rel="stylesheet">
-    
+    <style>
+        .suggestion-item {
+            cursor: pointer;
+            background-color: #333;
+            padding: 10px;
+            margin: 5px 0;
+        }
+        .suggestion-item:hover {
+            background-color: #444;
+        }
+    </style>
 </head>
 
 <body>
@@ -18,6 +28,7 @@
     <!-- Search Bar Section -->
     <div class="search-container">
         <input type="text" id="searchInput" placeholder="Search for a band..." oninput="filterArtists()">
+        <div id="suggestions" class="dropdown-content"></div>
     </div>
 
     <!-- List of Artists -->
@@ -35,19 +46,45 @@
     <script>
         // Function to filter the artist list based on the search query
         function filterArtists() {
-            const searchQuery = document.getElementById("searchInput").value.toLowerCase();
-            const artistList = document.getElementById("artistList");
-            const artists = artistList.getElementsByTagName("li");
+    const searchQuery = document.getElementById("searchInput").value.toLowerCase();
+    if (searchQuery.length < 1) {
+        document.getElementById("suggestions").innerHTML = "";
+        return;
+    }
+    
+    fetch(`/search?q=${searchQuery}`)
+        .then(response => response.json())
+        .then(data => {
+            const suggestions = document.getElementById("suggestions");
+            suggestions.innerHTML = "";
 
-            for (let i = 0; i < artists.length; i++) {
-                const artistName = artists[i].getElementsByTagName("p")[0].innerText.toLowerCase();
-                if (artistName.indexOf(searchQuery) > -1) {
-                    artists[i].style.display = "";
-                } else {
-                    artists[i].style.display = "none";
+            // Use a map to keep track of unique suggestions
+            const uniqueSuggestions = new Map();
+
+            data.forEach(item => {
+                const key = `${item.name} - ${item.type}`;
+                if (!uniqueSuggestions.has(key)) {
+                    uniqueSuggestions.set(key, item);
+
+                    const suggestion = document.createElement("div");
+                    suggestion.classList.add("suggestion-item");
+                    suggestion.innerText = key;
+                    suggestion.onclick = function () {
+                        navigateToArtist(item.id);
+                    };
+                    suggestions.appendChild(suggestion);
                 }
-            }
-        }
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching search results:', error);
+        });
+}
+
+// Function to navigate to the artist's page
+function navigateToArtist(artistId) {
+    window.location.href = `/artists/${artistId}`;
+}
     </script>
 </body>
 </html>

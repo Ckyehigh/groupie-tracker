@@ -99,6 +99,17 @@ func main() {
 
 		json.NewEncoder(w).Encode(locations)
 	})
+	http.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
+		query := r.URL.Query().Get("q")
+		if query == "" {
+			http.Error(w, "Query parameter 'q' is required", http.StatusBadRequest)
+			return
+		}
+
+		results := fetcher.Search(query)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(results)
+	})
 
 	http.HandleFunc("/artists/dates/", func(w http.ResponseWriter, r *http.Request) {
 		idStr := r.URL.Path[len("/artists/dates/"):]
@@ -152,3 +163,5 @@ func main() {
 	log.Println("Server started at :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
+
+// pass the click id into a link so as to move to that page
