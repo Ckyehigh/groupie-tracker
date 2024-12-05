@@ -8,6 +8,21 @@ import (
 	"strings"
 )
 
+// Add this new function to your fetcher.go file
+
+// ArtistInfo represents the complete information for an artist
+type ArtistInfo struct {
+	ID           int      `json:"id"`
+	Name         string   `json:"name"`
+	Image        string   `json:"image"`
+	Members      []string `json:"members"`
+	CreationDate int      `json:"creationDate"`
+	FirstAlbum   string   `json:"firstAlbum"`
+	Locations    []string `json:"locations"`
+	ConcertDates []string `json:"concertDates"`
+	Relations    []string `json:"relations"`
+}
+
 // API represents the structure of the main API response
 type API struct {
 	Artists   string `json:"artists"`
@@ -68,7 +83,6 @@ func FetchAPI() (*API, error) {
 	return &api, nil
 }
 
-// Search function to search for artists, locations, or members
 // Search function to search for artists, locations, or members
 func Search(data string) []map[string]string {
 	var results []map[string]string

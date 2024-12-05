@@ -163,5 +163,3 @@ func main() {
 	log.Println("Server started at :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
-
-// pass the click id into a link so as to move to that page
