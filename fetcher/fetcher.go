@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"sync"
 )
-
-// Add this new function to your fetcher.go file
 
 // ArtistInfo represents the complete information for an artist
 type ArtistInfo struct {
@@ -52,13 +51,11 @@ type Location struct {
 // Date represents the structure of a date data
 type Date struct {
 	Dates []string `json:"dates"`
-	// Add other fields if needed
 }
 
 // Relation represents the structure of a relation data
 type Relation struct {
 	ArtistName string `json:"artistName"`
-	// Add other fields if needed
 }
 
 // FetchAPI fetches the API information
@@ -83,27 +80,68 @@ func FetchAPI() (*API, error) {
 	return &api, nil
 }
 
-// Search function to search for artists, locations, or members
+// Search function to search for artists, locations, or members using Go routines and channels
 func Search(data string) []map[string]string {
 	var results []map[string]string
 	_, err := strconv.Atoi(string(data[0]))
 	if err != nil {
 		// Search by artist name, location, or member
+		var wg sync.WaitGroup
+		resultsChan := make(chan map[string]string, len(artists))
+		//idChan := make(chan map[int]int)
+
 		for _, artist := range artists {
-			if strings.Contains(strings.ToLower(artist.Name), strings.ToLower(data)) {
-				results = append(results, map[string]string{"type": "Band", "id": strconv.Itoa(artist.ID), "name": artist.Name})
-			}
-			locations, _ := FetchLocations("https://groupietrackers.herokuapp.com/api/locations", artist.ID)
-			for _, location := range locations {
-				if strings.Contains(strings.ToLower(location), strings.ToLower(data)) {
-					results = append(results, map[string]string{"type": "Show Location", "id": strconv.Itoa(artist.ID), "name": location + " - " + artist.Name})
+			wg.Add(1)
+			go func(artist Artist) {
+				defer wg.Done()
+				if len(data) == 1 {
+					if strings.HasPrefix(strings.ToLower(artist.Name), strings.ToLower(data)) {
+						resultsChan <- map[string]string{"type": "Band", "id": strconv.Itoa(artist.ID), "name": artist.Name}
+						//idChan[artist.ID]++
+					}
+					locations, _ := FetchLocations("https://groupietrackers.herokuapp.com/api/locations", artist.ID)
+					for _, location := range locations {
+						if strings.HasPrefix(strings.ToLower(location), strings.ToLower(data)) {
+							resultsChan <- map[string]string{"type": "Show Location", "id": strconv.Itoa(artist.ID), "name": location + " - " + artist.Name}
+							//idChan[artist.ID]++
+						}
+					}
+					for _, member := range artist.Members {
+						if strings.HasPrefix(strings.ToLower(member), strings.ToLower(data)) {
+							resultsChan <- map[string]string{"type": "Member", "id": strconv.Itoa(artist.ID), "name": member + " - " + artist.Name}
+							//idChan[artist.ID]++
+						}
+					}
+				} else {
+
+					if strings.Contains(strings.ToLower(artist.Name), strings.ToLower(data)) {
+						resultsChan <- map[string]string{"type": "Band", "id": strconv.Itoa(artist.ID), "name": artist.Name}
+						//idChan[artist.ID]++
+					}
+					locations, _ := FetchLocations("https://groupietrackers.herokuapp.com/api/locations", artist.ID)
+					for _, location := range locations {
+						if strings.Contains(strings.ToLower(location), strings.ToLower(data)) {
+							resultsChan <- map[string]string{"type": "Show Location", "id": strconv.Itoa(artist.ID), "name": location + " - " + artist.Name}
+							//idChan[artist.ID]++
+						}
+					}
+					for _, member := range artist.Members {
+						if strings.Contains(strings.ToLower(member), strings.ToLower(data)) {
+							resultsChan <- map[string]string{"type": "Member", "id": strconv.Itoa(artist.ID), "name": member + " - " + artist.Name}
+							//idChan[artist.ID]++
+						}
+					}
 				}
-			}
-			for _, member := range artist.Members {
-				if strings.Contains(strings.ToLower(member), strings.ToLower(data)) {
-					results = append(results, map[string]string{"type": "Member", "id": strconv.Itoa(artist.ID), "name": member + " - " + artist.Name})
-				}
-			}
+			}(artist)
+		}
+
+		go func() {
+			wg.Wait()
+			close(resultsChan)
+		}()
+
+		for result := range resultsChan {
+			results = append(results, result)
 		}
 	} else {
 		// Search by first album or creation date
@@ -118,6 +156,7 @@ func Search(data string) []map[string]string {
 	}
 	return results
 }
+
 
 // FetchArtists fetches the list of artists
 func FetchArtists(url string) ([]Artist, error) {
@@ -229,3 +268,10 @@ func FetchRelations(url string, id int) ([]Relation, error) {
 
 	return relations, nil
 }
+
+
+//when search string is only one letter only look for results starting with the letter **DONE
+
+//if multiple results when "enter" is pressed reload the page with the search results only
+
+//scroll bar on search suggestions with fixed size and or arrow key selection functionality
