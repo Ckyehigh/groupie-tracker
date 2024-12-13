@@ -1,7 +1,3 @@
-
-
-<!DOCTYPE html>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,13 +11,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Faculty+Glyphic&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            background: #121212; /* Dark background */
-            color: #e0e0e0; /* Light gray text */
             font-family: 'Roboto', sans-serif;
-            text-align: center;
+            background: url('/static/images/back.jpg') no-repeat center center fixed;
+            background-size: 100%; /* Adjust the percentage to zoom in/out */
+            color: #e0e0e0; /* Light gray text */
+            min-height: 100vh;
             margin: 0;
             padding: 0;
-            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
         .container {
@@ -29,7 +28,7 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem;
-            background: #121212; /* Slightly lighter dark background */
+            background: #12121231; /* Slightly lighter dark background */
             border-radius: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
         }
@@ -81,8 +80,9 @@
             color: #e0e0e0; /* Light gray text */
         }
 
-        .suggestion-item:hover {
-            background-color: #3a3a3a; /* Slightly lighter gray on hover */
+        .suggestion-item:hover,
+        .suggestion-item.highlighted {
+            background-color: #3a3a3a; /* Slightly lighter gray on hover and highlight */
         }
 
         #artistList {
@@ -140,11 +140,12 @@
         </ul>
     </div>
 
-
     <script>
         let debounceTimer;
         const cache = new Map();
         let topResult = null;
+        let currentIndex = -1; // Track the index of the currently highlighted suggestion
+        let arrowKeyPressed = false; // Track if any arrow key was pressed
 
         // Function to filter the artist list based on the search query
         function filterArtists() {
@@ -154,6 +155,8 @@
                 if (searchQuery.length < 1) {
                     document.getElementById("suggestions").innerHTML = "";
                     topResult = null;
+                    currentIndex = -1;
+                    arrowKeyPressed = false;
                     return;
                 }
 
@@ -177,17 +180,20 @@
             const suggestions = document.getElementById("suggestions");
             suggestions.innerHTML = "";
             topResult = null;
+            currentIndex = -1; // Reset the current index when displaying new suggestions
+            arrowKeyPressed = false; // Reset the arrow key press flag
 
             // Use a map to keep track of unique suggestions
             const uniqueSuggestions = new Map();
 
-            data.forEach(item => {
+            data.forEach((item, index) => {
                 const key = `${item.name} - ${item.type}`;
                 if (!uniqueSuggestions.has(key)) {
                     uniqueSuggestions.set(key, item);
 
                     const suggestion = document.createElement("div");
                     suggestion.classList.add("suggestion-item");
+                    suggestion.dataset.artistId = item.id; // Store the artist ID in a data attribute
                     suggestion.innerText = key;
                     suggestion.onclick = function () {
                         navigateToArtist(item.id);
@@ -207,12 +213,48 @@
             window.location.href = `/artists/${artistId}`;
         }
 
-        // Add event listener for Enter key
+        // Add event listener for keydown events on the search input
         document.getElementById("searchInput").addEventListener("keydown", function(event) {
-            if (event.key === "Enter" && topResult) {
-                navigateToArtist(topResult.id);
+            const suggestions = document.getElementById("suggestions").children;
+
+            if (event.key === "ArrowDown") {
+                // Move down in the suggestions list
+                if (currentIndex < suggestions.length - 1) {
+                    currentIndex++;
+                    highlightSuggestion();
+                }
+                arrowKeyPressed = true;
+            } else if (event.key === "ArrowUp") {
+                // Move up in the suggestions list
+                if (currentIndex > 0) {
+                    currentIndex--;
+                    highlightSuggestion();
+                }
+                arrowKeyPressed = true;
+            } else if (event.key === "Enter") {
+                // Navigate to the highlighted suggestion or top result
+                if (currentIndex >= 0) {
+                    const artistId = suggestions[currentIndex].dataset.artistId;
+                    navigateToArtist(artistId);
+                } else if (!arrowKeyPressed && topResult) {
+                    navigateToArtist(topResult.id);
+                }
             }
         });
+
+        // Function to highlight the currently selected suggestion
+        function highlightSuggestion() {
+            const suggestions = document.getElementById("suggestions").children;
+
+            for (let i = 0; i < suggestions.length; i++) {
+                if (i === currentIndex) {
+                    suggestions[i].classList.add("highlighted");
+                    topResult = cache.get(document.getElementById("searchInput").value.toLowerCase())[currentIndex];
+                } else {
+                    suggestions[i].classList.remove("highlighted");
+                }
+            }
+        }
     </script>
 </body>
 </html>
