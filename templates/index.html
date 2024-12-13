@@ -132,7 +132,7 @@
             {{range .}}
                 <li>
                     <a href="/artists/{{.ID}}">
-                        <img src="{{.Image}}" alt="{{.Name}}">
+                        <img src="{{.Image}}" alt="{{.Name}}" class="artist-image" data-id="{{.ID}}">
                     </a>
                     <p>{{.Name}}</p>
                 </li>
@@ -143,9 +143,20 @@
     <script>
         let debounceTimer;
         const cache = new Map();
+        const imageCache = {}; // Cache to store image paths
         let topResult = null;
         let currentIndex = -1; // Track the index of the currently highlighted suggestion
         let arrowKeyPressed = false; // Track if any arrow key was pressed
+
+        // Cache images on page load
+        window.addEventListener('load', () => {
+            // Find all images on the page and cache their paths
+            const allImages = document.querySelectorAll('.artist-image');
+            allImages.forEach(image => {
+                const imageId = image.dataset.id; // Use data-id to map images to their artist IDs
+                imageCache[imageId] = image.src; // Cache image path using artist ID as key
+            });
+        });
 
         // Function to filter the artist list based on the search query
         function filterArtists() {
@@ -213,6 +224,39 @@
             window.location.href = `/artists/${artistId}`;
         }
 
+        // Function to display all suggestions as artist cards on the main page
+        function displayAllSuggestions() {
+            const artistList = document.getElementById("artistList");
+            const suggestions = document.getElementById("suggestions").children;
+
+            // Clear the artist list
+            artistList.innerHTML = "";
+
+            // Add all suggestions to the artist list
+            for (let i = 0; i < suggestions.length; i++) {
+                const artistId = suggestions[i].dataset.artistId;
+                const artistName = suggestions[i].innerText;
+                const artistImage = imageCache[artistId]; // Use cached image path
+
+                const li = document.createElement("li");
+                const a = document.createElement("a");
+                a.href = `/artists/${artistId}`;
+                const img = document.createElement("img");
+                img.src = artistImage;
+                img.alt = artistName;
+                const p = document.createElement("p");
+                p.textContent = artistName;
+
+                a.appendChild(img);
+                li.appendChild(a);
+                li.appendChild(p);
+                artistList.appendChild(li);
+            }
+
+            // Clear the suggestions
+            document.getElementById("suggestions").innerHTML = "";
+        }
+
         // Add event listener for keydown events on the search input
         document.getElementById("searchInput").addEventListener("keydown", function(event) {
             const suggestions = document.getElementById("suggestions").children;
@@ -232,11 +276,13 @@
                 }
                 arrowKeyPressed = true;
             } else if (event.key === "Enter") {
-                // Navigate to the highlighted suggestion or top result
+                // Navigate to the highlighted suggestion or top result, or display all suggestions
                 if (currentIndex >= 0) {
                     const artistId = suggestions[currentIndex].dataset.artistId;
                     navigateToArtist(artistId);
-                } else if (!arrowKeyPressed && topResult) {
+                } else if (!arrowKeyPressed) {
+                    displayAllSuggestions();
+                } else if (topResult) {
                     navigateToArtist(topResult.id);
                 }
             }
@@ -245,11 +291,9 @@
         // Function to highlight the currently selected suggestion
         function highlightSuggestion() {
             const suggestions = document.getElementById("suggestions").children;
-
             for (let i = 0; i < suggestions.length; i++) {
                 if (i === currentIndex) {
                     suggestions[i].classList.add("highlighted");
-                    topResult = cache.get(document.getElementById("searchInput").value.toLowerCase())[currentIndex];
                 } else {
                     suggestions[i].classList.remove("highlighted");
                 }

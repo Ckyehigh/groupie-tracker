@@ -157,7 +157,6 @@ func Search(data string) []map[string]string {
 	return results
 }
 
-
 // FetchArtists fetches the list of artists
 func FetchArtists(url string) ([]Artist, error) {
 	resp, err := http.Get(url)
@@ -269,9 +268,8 @@ func FetchRelations(url string, id int) ([]Relation, error) {
 	return relations, nil
 }
 
-
 //when search string is only one letter only look for results starting with the letter **DONE
 
 //if multiple results when "enter" is pressed reload the page with the search results only
 
-//scroll bar on search suggestions with fixed size and or arrow key selection functionality
+//scroll bar on search suggestions with fixed size and or arrow key selection functionality **DONE
