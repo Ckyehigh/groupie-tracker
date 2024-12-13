@@ -21,6 +21,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            position: relative; /* Ensure the suggestions can overlay on the body */
         }
 
         .container {
@@ -31,6 +32,7 @@
             background: #12121231; /* Slightly lighter dark background */
             border-radius: 20px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            position: relative; /* Make sure the container is the reference point for the overlay */
         }
 
         h1 {
@@ -43,6 +45,7 @@
 
         .search-container {
             margin-bottom: 2rem;
+            position: relative; /* Ensures the suggestions list can overlay on this container */
         }
 
         #searchInput {
@@ -54,6 +57,7 @@
             background: #121212; /* Dark gray background */
             color: #ffffff; /* White text */
             transition: all 0.3s ease;
+            z-index: 10; /* Make sure the input stays above the suggestions */
         }
 
         #searchInput::placeholder {
@@ -69,8 +73,14 @@
             background: #444444; /* Dark gray background */
             border-radius: 10px;
             margin-top: 0.5rem;
-            overflow: auto;
             max-height: 200px;
+            overflow-y: auto;
+            position: absolute;
+            top: 100%; /* Position the suggestions directly below the input */
+            left: 0;
+            width: 100%;
+            z-index: 5; /* Ensure it overlays the content */
+            display: none; /* Hidden by default */
         }
 
         .suggestion-item {
@@ -163,11 +173,10 @@
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
                 const searchQuery = document.getElementById("searchInput").value.toLowerCase();
+                const suggestions = document.getElementById("suggestions");
+
                 if (searchQuery.length < 1) {
-                    document.getElementById("suggestions").innerHTML = "";
-                    topResult = null;
-                    currentIndex = -1;
-                    arrowKeyPressed = false;
+                    suggestions.style.display = 'none'; // Hide suggestions if input is empty
                     return;
                 }
 
@@ -184,7 +193,7 @@
                             console.error('Error fetching search results:', error);
                         });
                 }
-            }, 0);
+            }, 300);
         }
 
         function displaySuggestions(data) {
@@ -217,6 +226,8 @@
                     }
                 }
             });
+
+            suggestions.style.display = 'block'; // Show suggestions once there are results
         }
 
         // Function to navigate to the artist's page
