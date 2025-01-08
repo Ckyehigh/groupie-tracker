@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Faculty+Glyphic&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -23,7 +24,6 @@
             align-items: center;
             position: relative; /* Ensure the suggestions can overlay on the body */
         }
-
         .container {
             width: 90%;
             max-width: 1200px;
@@ -124,6 +124,25 @@
             color: #ffffff; /* White text */
             font-weight: bold;
         }
+
+        #reloadButton {
+        display: block;
+        width: 200px;
+        margin: 1rem auto 2rem;
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        font-weight: bold;
+        color: #ffffff;
+        background-color: #111111;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+    #reloadButton:hover {
+        background-color: #030303;
+    }
     </style>
 </head>
 
@@ -131,14 +150,20 @@
     <div class="container">
         <h1>Groupie-Tracker</h1>
 
+
         <!-- Search Bar Section -->
         <div class="search-container">
             <input type="text" id="searchInput" placeholder="Search for a band..." oninput="filterArtists()">
             <div id="suggestions"></div>
         </div>
 
+        <!-- Reload Button -->
+        <button id="reloadButton" onclick="reloadMainPage()">Reload Main Page</button>
+
+
         <!-- List of Artists -->
         <ul id="artistList">
+
             {{range .}}
                 <li>
                     <a href="/artists/{{.ID}}">
@@ -149,6 +174,7 @@
             {{end}}
         </ul>
     </div>
+
 
     <script>
         let debounceTimer;
@@ -236,6 +262,8 @@
         }
 
         // Function to display all suggestions as artist cards on the main page
+
+
         function displayAllSuggestions() {
             const artistList = document.getElementById("artistList");
             const suggestions = document.getElementById("suggestions").children;
@@ -248,7 +276,6 @@
                 const artistId = suggestions[i].dataset.artistId;
                 const artistName = suggestions[i].innerText;
                 const artistImage = imageCache[artistId]; // Use cached image path
-
                 const li = document.createElement("li");
                 const a = document.createElement("a");
                 a.href = `/artists/${artistId}`;
@@ -268,7 +295,10 @@
             document.getElementById("suggestions").innerHTML = "";
         }
 
+
+
         // Add event listener for keydown events on the search input
+
         document.getElementById("searchInput").addEventListener("keydown", function(event) {
             const suggestions = document.getElementById("suggestions").children;
 
@@ -286,6 +316,8 @@
                     highlightSuggestion();
                 }
                 arrowKeyPressed = true;
+
+
             } else if (event.key === "Enter") {
                 // Navigate to the highlighted suggestion or top result, or display all suggestions
                 if (currentIndex >= 0) {
@@ -297,7 +329,10 @@
                     navigateToArtist(topResult.id);
                 }
             }
+
+
         });
+
 
         // Function to highlight the currently selected suggestion
         function highlightSuggestion() {
@@ -310,6 +345,10 @@
                 }
             }
         }
+        // Function to reload the main page
+    function reloadMainPage() {
+        window.location.href = '/';
+    }
     </script>
 </body>
 </html>
