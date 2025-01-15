@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"groupie-tracker/fetcher"
 )
@@ -15,6 +16,16 @@ func main() {
 	http.Handle("/static/", http.StripPrefix("/static/", fs))
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" {
+			tmpl := template.Must(template.ParseFiles("templates/404.html"))
+			w.WriteHeader(http.StatusNotFound)
+			err := tmpl.Execute(w, nil)
+			if err != nil {
+				log.Println("Error executing 404 template:", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			return
+		}
 		api, err := fetcher.FetchAPI()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -35,8 +46,19 @@ func main() {
 	})
 
 	http.HandleFunc("/artists/", func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/artists/") {
+			tmpl := template.Must(template.ParseFiles("templates/404.html"))
+			w.WriteHeader(http.StatusNotFound)
+			err := tmpl.Execute(w, nil)
+			if err != nil {
+				log.Println("Error executing 404 template:", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			return
+		}
 		idStr := r.URL.Path[len("/artists/"):]
 		id, err := strconv.Atoi(idStr)
+
 		if err != nil {
 			http.Error(w, "Invalid artist ID", http.StatusBadRequest)
 			return
